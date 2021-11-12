@@ -1,16 +1,15 @@
-# This is a sample Python script.
+import twitter
+import os
+from dotenv import load_dotenv
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    load_dotenv()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    api = twitter.Api(
+        consumer_key=os.getenv('API_KEY'),
+        consumer_secret=os.getenv('API_KEY_SECRET'),
+        access_token_key=os.getenv('ACCESS_TOKEN'),
+        access_token_secret=os.getenv('ACCESS_TOKEN_SECRET'))
+
+    #print(api.VerifyCredentials())
+    print(api.GetStatus("1458743621914705920"))
