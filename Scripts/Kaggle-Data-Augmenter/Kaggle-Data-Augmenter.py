@@ -27,15 +27,31 @@ if __name__ == '__main__':
     csv_writer = csv.DictWriter(csv_output_file, fieldnames=fieldnames, delimiter=',')
     csv_writer.writeheader()
 
+    rows = {}
     for row in csv_reader:
-        try:
-            api_data = api.GetStatus(row["tweetid"])
-        except twitter.TwitterError as e:
-            print(e)
-            print("Error, skipping tweet")
+        rows[int(row["tweetid"])] = row["sentiment"]
+
+    print(len(rows))
+
+    # Process in bunches to avoid hitting API limits (as much)
+    tweet_data = {}
+    i = 0
+    #while i < len(rows):
+    while i < 1000:
+        k = i + min(5000, len(rows) - i)
+        api_data = api.GetStatuses(list(rows.keys())[i:k], trim_user=True, include_entities=False, map=True)
+        tweet_data.update(api_data)
+        i = k
+
+    print(len(tweet_data))
+    print(tweet_data)
+
+    for key in tweet_data.keys():
+        api_data = tweet_data.get(key)
+        if api_data is None:  # Invalid Tweets, likely deleted, user banned, made private, etc.
             continue
-        #print(api_data)
         print(api_data.id)
+        print(rows.get(key))
         print(api_data.lang)
         print(api_data.geo)
         print(api_data.place)
@@ -51,7 +67,7 @@ if __name__ == '__main__':
         # Finally, write tweet
         output = {"tweetid": api_data.id,
                   "message": api_data.text,
-                  "sentiment": row["sentiment"],
+                  "sentiment": rows.get(key),
                   "created_at": api_data.created_at,
                   "favorite_count": api_data.favorite_count,
                   "retweet_count": api_data.retweet_count,
