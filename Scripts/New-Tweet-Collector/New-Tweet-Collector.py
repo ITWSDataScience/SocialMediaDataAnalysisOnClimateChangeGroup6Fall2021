@@ -2,20 +2,16 @@ import twitter
 import os
 from dotenv import load_dotenv
 import csv
-import sys
-import json
 
 if __name__ == '__main__':
-    load_dotenv()
 
+    # Load environment variables and initialize the Twitter API
+    load_dotenv()
     api = twitter.Api(
         consumer_key=os.getenv('API_KEY'),
         consumer_secret=os.getenv('API_KEY_SECRET'),
         access_token_key=os.getenv('ACCESS_TOKEN'),
         access_token_secret=os.getenv('ACCESS_TOKEN_SECRET'))
-
-    #print(api.VerifyCredentials())
-    #print(api.GetStatus("1458743621914705920"))
 
     # Load output CSV
     fieldnames = ["tweetid", "message", "created_at", "favorite_count", "retweet_count", "source",
@@ -23,30 +19,31 @@ if __name__ == '__main__':
     csv_output_file = None
     csv_writer = None
     if os.path.exists("output.csv"):
-        # Append
+        # Append to the existing file
         csv_output_file = open("output.csv", "a", encoding="utf8", newline='')
         csv_writer = csv.DictWriter(csv_output_file, fieldnames=fieldnames, delimiter=',')
     else:
+        # Create a new file
         csv_output_file = open("output.csv", "w", encoding="utf8", newline='')
         csv_writer = csv.DictWriter(csv_output_file, fieldnames=fieldnames, delimiter=',')
         csv_writer.writeheader()
 
-    # api.GetStreamFilter will return a generator that yields one status
-    # message (i.e., Tweet) at a time as a JSON dictionary.
-    LOCATIONS = ["-124.848974,24.396308,-66.885444,49.384358"]  # NOTE, works as "OR" with keywords, not AND
+    # Filtering criteria
     LANGUAGES = ["en"]
     KEYWORDS = ["climate change", "earthquake", "flood"]
 
+    # Initialize some tallies and start collecting tweets
     total_tweets = 0
     relevant_tweets = 0
     while True:
+        # Occasionally, the connection gets interrupted. Having it in a loop here allows for automatic retries
         try:
+            # api.GetStreamFilter will return a generator that yields one status
+            # message (i.e., Tweet) at a time as a JSON dictionary.
             for tweet in api.GetStreamFilter(track=KEYWORDS, languages=LANGUAGES):
                 print()
                 print(f"Tweet {total_tweets}: {tweet['id']}, (relevant tweets so far: {relevant_tweets})")
                 print(tweet["text"])
-                #print(tweet["geo"])
-                #print(tweet["place"])
                 total_tweets += 1
 
                 # Things to filter based on
@@ -57,7 +54,7 @@ if __name__ == '__main__':
                     print("Non-Geotagged tweet, skipping")
                     continue
 
-                # Finally, write tweet
+                # Finally, write tweet to output file
                 output = {"tweetid": tweet["id"],
                           "message": tweet["text"],
                           "created_at": tweet["created_at"],
