@@ -2,6 +2,7 @@ import twitter
 import os
 from dotenv import load_dotenv
 import csv
+import dateutil.parser
 
 if __name__ == '__main__':
 
@@ -57,7 +58,7 @@ if __name__ == '__main__':
                 # Finally, write tweet to output file
                 output = {"tweetid": tweet["id"],
                           "message": tweet["text"],
-                          "created_at": tweet["created_at"],
+                          "created_at": dateutil.parser.parse(tweet["created_at"]).isoformat(),
                           "favorite_count": tweet["favorite_count"],
                           "retweet_count": tweet["retweet_count"],
                           "source": tweet["source"],
