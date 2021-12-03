@@ -3,6 +3,7 @@ import twitter
 import os
 from dotenv import load_dotenv
 import sys
+import dateutil.parser
 
 if __name__ == '__main__':
 
@@ -39,14 +40,17 @@ if __name__ == '__main__':
     # Process in batches of 5000 tweets to avoid hitting API limits (as much as possible)
     tweet_data = {}
     i = 0
+    print(f"Processing {len(rows)} tweets...")
     while i < len(rows):
         k = i + min(5000, len(rows) - i)
         api_data = api.GetStatuses(list(rows.keys())[i:k], trim_user=True, include_entities=False, map=True)
         tweet_data.update(api_data)
         i = k
+        print(f"Processed {i} tweets")
 
     # Now that we've gathered all the tweet data, filter out any data that we don't want
     # This consists of tweets that are no longer available, don't have a geotag or place tag, or aren't in English
+    print("Exporting tweets to CSV...")
     for key in tweet_data.keys():
         api_data = tweet_data.get(key)
         if api_data is None:  # Invalid Tweets, likely deleted, user banned, made private, etc.
@@ -54,17 +58,15 @@ if __name__ == '__main__':
 
         # Things to filter based on
         if api_data.lang != "en":  # Only English tweets
-            print("Non-English tweet, skipping")
             continue
         if api_data.place is None and api_data.geo is None:  # Only geotagged tweets
-            print("Non-Geotagged tweet, skipping")
             continue
 
         # Finally, write tweet to the output file
         output = {"tweetid": api_data.id,
                   "message": api_data.text,
                   "sentiment": rows.get(key),
-                  "created_at": api_data.created_at,
+                  "created_at": dateutil.parser.parse(api_data.created_at).isoformat(),
                   "favorite_count": api_data.favorite_count,
                   "retweet_count": api_data.retweet_count,
                   "source": api_data.source,
